@@ -1,4 +1,5 @@
-import { Home, Search, Heart, User, Settings, Image, Star, X } from "lucide-react";
+import { Home, Search, Heart, User, Settings, Image, Star, X, Bug } from "lucide-react";
+import Link from "next/link";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ const menuItems = [
   { icon: Heart, label: "お気に入り", href: "/favorites" },
   { icon: User, label: "プロフィール", href: "/profile" },
   { icon: Settings, label: "設定", href: "/settings" },
+  { icon: Bug, label: "デバッグ", href: "/debug" },
 ];
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -38,14 +40,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* メニューアイテム */}
         <nav className="flex flex-col py-4">
           {menuItems.map((item) => (
-            <button
+            <Link
               key={item.label}
+              href={item.href}
               className="flex items-center px-6 py-3 text-left hover:bg-gray-100 transition-colors"
               onClick={onClose}
             >
               <item.icon className="h-5 w-5 mr-3 text-gray-600" />
               <span className="text-gray-800">{item.label}</span>
-            </button>
+            </Link>
           ))}
         </nav>
       </div>

@@ -1,20 +1,153 @@
 "use client"
 
 import { useState, useEffect } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, connectFirestoreEmulator } from 'firebase/firestore';
 
 export default function DebugPage() {
   const [mounted, setMounted] = useState(false);
+  const [firebaseStatus, setFirebaseStatus] = useState<{
+    connected: boolean;
+    error: string | null;
+    config: any;
+    collections: string[];
+    testing: boolean;
+  }>({
+    connected: false,
+    error: null,
+    config: null,
+    collections: [],
+    testing: false
+  });
 
   useEffect(() => {
     setMounted(true);
+    testFirebaseConnection();
   }, []);
+
+  const testFirebaseConnection = async () => {
+    setFirebaseStatus(prev => ({ ...prev, testing: true }));
+    
+    try {
+      // Firebase設定を取得
+      const config = {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      };
+
+      if (!db) {
+        throw new Error('Firestore database is not initialized');
+      }
+
+      // コレクション一覧を取得してみる
+      const collections = [];
+      const testCollectionNames = ['images', 'users', 'settings', 'test'];
+      
+      for (const collName of testCollectionNames) {
+        try {
+          const collRef = collection(db, collName);
+          const snapshot = await getDocs(collRef);
+          collections.push(`${collName} (${snapshot.size} documents)`);
+        } catch (err) {
+          collections.push(`${collName} (access error)`);
+        }
+      }
+
+      setFirebaseStatus({
+        connected: true,
+        error: null,
+        config,
+        collections,
+        testing: false
+      });
+
+    } catch (error: any) {
+      setFirebaseStatus({
+        connected: false,
+        error: error.message || 'Unknown error',
+        config: {
+          apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+          authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+          messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+          appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+        },
+        collections: [],
+        testing: false
+      });
+    }
+  };
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* ヘッダー */}
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h1 className="text-3xl font-bold text-blue-600 mb-4">Tailwind CSS Debug Page</h1>
-          <p className="text-gray-600">このページでTailwind CSSが正しく動作しているかテストします。</p>
+          <h1 className="text-3xl font-bold text-blue-600 mb-4">Firebase Debug Page</h1>
+          <p className="text-gray-600">このページでFirebaseの接続とTailwind CSSが正しく動作しているかテストします。</p>
+        </div>
+
+        {/* Firebase接続テスト */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold">Firebase 接続テスト</h2>
+            <button
+              onClick={testFirebaseConnection}
+              disabled={firebaseStatus.testing}
+              className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-4 py-2 rounded transition-colors"
+            >
+              {firebaseStatus.testing ? '接続中...' : '再テスト'}
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {/* 接続ステータス */}
+            <div className={`p-4 rounded-lg ${firebaseStatus.connected ? 'bg-green-100 border-green-300' : 'bg-red-100 border-red-300'} border`}>
+              <div className="flex items-center">
+                <div className={`w-3 h-3 rounded-full mr-2 ${firebaseStatus.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="font-semibold">
+                  {firebaseStatus.testing ? '接続テスト中...' : firebaseStatus.connected ? 'Firebase接続: OK' : 'Firebase接続: エラー'}
+                </span>
+              </div>
+              {firebaseStatus.error && (
+                <p className="text-red-600 mt-2 text-sm">エラー: {firebaseStatus.error}</p>
+              )}
+            </div>
+
+            {/* 設定情報 */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">Firebase 設定</h3>
+              <div className="text-sm font-mono space-y-1">
+                <p><strong>API Key:</strong> {firebaseStatus.config?.apiKey ? `${firebaseStatus.config.apiKey.substring(0, 10)}...` : 'Not set'}</p>
+                <p><strong>Auth Domain:</strong> {firebaseStatus.config?.authDomain || 'Not set'}</p>
+                <p><strong>Project ID:</strong> {firebaseStatus.config?.projectId || 'Not set'}</p>
+                <p><strong>Storage Bucket:</strong> {firebaseStatus.config?.storageBucket || 'Not set'}</p>
+                <p><strong>Messaging Sender ID:</strong> {firebaseStatus.config?.messagingSenderId || 'Not set'}</p>
+                <p><strong>App ID:</strong> {firebaseStatus.config?.appId ? `${firebaseStatus.config.appId.substring(0, 20)}...` : 'Not set'}</p>
+              </div>
+            </div>
+
+            {/* コレクション情報 */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">Firestore コレクション</h3>
+              {firebaseStatus.collections.length > 0 ? (
+                <ul className="text-sm space-y-1">
+                  {firebaseStatus.collections.map((collection, index) => (
+                    <li key={index} className="flex items-center">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                      {collection}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 text-sm">コレクション情報を取得できませんでした</p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* カラーテスト */}
