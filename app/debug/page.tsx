@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, connectFirestoreEmulator } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 
 export default function DebugPage() {
   const [mounted, setMounted] = useState(false);
   const [firebaseStatus, setFirebaseStatus] = useState<{
     connected: boolean;
     error: string | null;
-    config: any;
+    config: Record<string, string | undefined> | null;
     collections: string[];
     testing: boolean;
   }>({
@@ -52,7 +52,7 @@ export default function DebugPage() {
           const collRef = collection(db, collName);
           const snapshot = await getDocs(collRef);
           collections.push(`${collName} (${snapshot.size} documents)`);
-        } catch (err) {
+        } catch {
           collections.push(`${collName} (access error)`);
         }
       }
@@ -65,10 +65,10 @@ export default function DebugPage() {
         testing: false
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       setFirebaseStatus({
         connected: false,
-        error: error.message || 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error',
         config: {
           apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
           authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
