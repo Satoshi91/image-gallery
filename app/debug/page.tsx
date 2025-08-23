@@ -29,14 +29,14 @@ export default function DebugPage() {
     setFirebaseStatus(prev => ({ ...prev, testing: true }));
     
     try {
-      // Firebase設定を取得
+      // Firebase設定を取得（クライアントサイドで確実に取得）
       const config = {
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+        apiKey: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_API_KEY : 'Server-side',
+        authDomain: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN : 'Server-side',
+        projectId: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID : 'Server-side',
+        storageBucket: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET : 'Server-side',
+        messagingSenderId: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID : 'Server-side',
+        appId: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_APP_ID : 'Server-side',
       };
 
       if (!db) {
@@ -70,12 +70,12 @@ export default function DebugPage() {
         connected: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         config: {
-          apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-          authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-          messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-          appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+          apiKey: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_API_KEY : 'Server-side',
+          authDomain: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN : 'Server-side',
+          projectId: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID : 'Server-side',
+          storageBucket: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET : 'Server-side',
+          messagingSenderId: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID : 'Server-side',
+          appId: typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_APP_ID : 'Server-side',
         },
         collections: [],
         testing: false
@@ -128,6 +128,18 @@ export default function DebugPage() {
                 <p><strong>Storage Bucket:</strong> {firebaseStatus.config?.storageBucket || 'Not set'}</p>
                 <p><strong>Messaging Sender ID:</strong> {firebaseStatus.config?.messagingSenderId || 'Not set'}</p>
                 <p><strong>App ID:</strong> {firebaseStatus.config?.appId ? `${firebaseStatus.config.appId.substring(0, 20)}...` : 'Not set'}</p>
+              </div>
+            </div>
+
+            {/* 環境変数デバッグ */}
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <h3 className="font-semibold mb-2">環境変数デバッグ情報</h3>
+              <div className="text-sm font-mono space-y-1">
+                <p><strong>Window Object:</strong> {typeof window !== 'undefined' ? 'Available' : 'Not available (SSR)'}</p>
+                <p><strong>NODE_ENV:</strong> {process.env.NODE_ENV}</p>
+                <p><strong>Direct API Key Check:</strong> {process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'Set' : 'Not set'}</p>
+                <p><strong>Raw API Key (first 10):</strong> {process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.substring(0, 10) || 'undefined'}</p>
+                <p><strong>All NEXT_PUBLIC vars:</strong> {Object.keys(process.env).filter(key => key.startsWith('NEXT_PUBLIC')).join(', ')}</p>
               </div>
             </div>
 
